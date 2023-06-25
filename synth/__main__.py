@@ -1,35 +1,9 @@
 import logging
 from time import sleep
 
-import numpy as np
-
 import synth.settings as settings
 from synth.playback.stream_player import StreamPlayer
-
-def sine_generator(frequency, amplitude, sample_rate, frames_per_chunk):
-    """
-    A generator which yields a sine wave of frequency <frequency> and amplitude <amplitude>.
-    """
-    chunk_duration = frames_per_chunk / sample_rate
-    chunk_start_time = 0.0
-    chunk_end_time = chunk_duration
-    phase = 0.0
-    while True:
-        # Generate the wave
-        if frequency <= 0.0:
-            if frequency < 0.0:
-                log.error("Overriding negative frequency to 0")
-            amplitude = 0.0
-            wave = np.zeros(frames_per_chunk)
-        
-        else:
-            wave = amplitude * np.sin(phase + (2 * np.pi * frequency) * np.linspace(chunk_start_time, chunk_end_time, frames_per_chunk, endpoint=False))
-
-        # Update the state variables for next time
-        chunk_start_time = chunk_end_time
-        chunk_end_time += chunk_duration
-
-        yield wave.astype(np.float32)
+from synth.synthesis.signal.sine_wave_oscillator import SineWaveOscillator
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, 
@@ -60,10 +34,15 @@ if __name__ == "__main__":
     )
 
     # Create a sine wave generator
-    sine_wave_generator = sine_generator(frequency=440.0, amplitude=0.5, sample_rate=settings.sample_rate, frames_per_chunk=settings.frames_per_chunk)
+    sine_wave_generator = SineWaveOscillator(settings.sample_rate, settings.frames_per_chunk)
+    sine_wave_generator.frequency = 440.0
 
     # Create a stream player
     stream_player = StreamPlayer(sample_rate=settings.sample_rate, frames_per_chunk=settings.frames_per_chunk, input_delegate=sine_wave_generator)
-    stream_player.play()
-    while True:
-        sleep(1)
+
+    try:
+        stream_player.play()
+        while True:
+            sleep(1)
+    except KeyboardInterrupt:
+        log.info("Caught keyboard interrupt. Exiting the program.")
