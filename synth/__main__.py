@@ -4,13 +4,8 @@ import queue
 import sys
 
 import synth.settings as settings
-import synth.midi as midi
-from synth.playback.stream_player import StreamPlayer
-from synth.synthesis.signal.sine_wave_oscillator import SineWaveOscillator
-from synth.synthesis.signal.square_wave_oscillator import SquareWaveOscillator
-from synth.synthesis.signal.gain import Gain
-from synth.synthesis.signal.mixer import Mixer
 from synth.midi.midi_listener import MidiListener
+from .synthesizer import Synthesizer
 
 
 if __name__ == "__main__":
@@ -41,49 +36,22 @@ if __name__ == "__main__":
         """
     )
 
-    # Create a sine wave generator
-    sine_wave_generator = SineWaveOscillator(settings.sample_rate, settings.frames_per_chunk)
-    sine_wave_generator.frequency = 0.0
-
-    square_osc = SquareWaveOscillator(settings.sample_rate, settings.frames_per_chunk)
-    square_osc.frequency = 0.0
-
-    sine_gain = Gain(settings.sample_rate, settings.frames_per_chunk, [sine_wave_generator])
-    square_gain = Gain(settings.sample_rate, settings.frames_per_chunk, [square_osc])
-
-    mixer = Mixer(settings.sample_rate, settings.frames_per_chunk, [sine_gain, square_gain])
-
-    # Create a stream player
-    stream_player = StreamPlayer(sample_rate=settings.sample_rate, frames_per_chunk=settings.frames_per_chunk, input_delegate=mixer)
-
     listener_mailbox = queue.Queue()
     synth_mailbox = queue.Queue()
 
     midi_listener = MidiListener(listener_mailbox, synth_mailbox, settings.auto_attach)
+    synthesizer = Synthesizer(settings.sample_rate, settings.frames_per_chunk, synth_mailbox)
 
     try:
-        stream_player.play()
         midi_listener.start()
-        current_note = -1
+        synthesizer.start()
         while True:
-            if synth_mail := synth_mailbox.get():
-                log.info(f"{synth_mail}")
-                match synth_mail.split():
-                    case ["note_on", "-n", note, "-c", channel]:
-                        int_note = int(note)
-                        sine_wave_generator.frequency = midi.frequencies[int_note]
-                        square_osc.frequency = midi.frequencies[int_note]
-                        current_note = int_note
-                    case ["note_off", "-n", note, "-c", channel]:
-                        int_note = int(note)
-                        if current_note == int_note:
-                            sine_wave_generator.frequency = 0.0
-                            square_osc.frequency = 0.0
-                            current_note = -1
+            sleep(1)
     except KeyboardInterrupt:
         log.info("Caught keyboard interrupt. Exiting the program.")
 
-    stream_player.stop()
     listener_mailbox.put("exit")
+    synth_mailbox.put("exit")
     midi_listener.join()
+    synthesizer.join()
     sys.exit(0)
