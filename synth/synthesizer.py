@@ -11,6 +11,8 @@ from .synthesis.voice import Voice
 from .synthesis.signal.chain import Chain
 from .synthesis.signal.sine_wave_oscillator import SineWaveOscillator
 from .synthesis.signal.square_wave_oscillator import SquareWaveOscillator
+from .synthesis.signal.sawtooth_wave_oscillator import SawtoothWaveOscillator
+from .synthesis.signal.triangle_wave_oscillator import TriangleWaveOscillator
 from .synthesis.signal.gain import Gain
 from .synthesis.signal.mixer import Mixer
 from .playback.stream_player import StreamPlayer
@@ -71,16 +73,13 @@ class Synthesizer(threading.Thread):
         
 
     def setup_signal_chain(self) -> Chain:
-        sine_osc = SineWaveOscillator(self.sample_rate, self.frames_per_chunk)
-        sine_osc.frequency = 0.0
+        osc_a = SineWaveOscillator(self.sample_rate, self.frames_per_chunk)
+        osc_b = SquareWaveOscillator(self.sample_rate, self.frames_per_chunk)
 
-        square_osc = SquareWaveOscillator(self.sample_rate, self.frames_per_chunk)
-        square_osc.frequency = 0.0
+        gain_a = Gain(self.sample_rate, self.frames_per_chunk, [osc_a], control_tag="gain_a")
+        gain_b = Gain(self.sample_rate, self.frames_per_chunk, [osc_b], control_tag="gain_b")
 
-        sine_gain = Gain(self.sample_rate, self.frames_per_chunk, [sine_osc], control_tag="gain_a")
-        square_gain = Gain(self.sample_rate, self.frames_per_chunk, [square_osc], control_tag="gain_b")
-
-        mixer = Mixer(self.sample_rate, self.frames_per_chunk, [sine_gain, square_gain])
+        mixer = Mixer(self.sample_rate, self.frames_per_chunk, [gain_a, gain_b])
 
         signal_chain = Chain(mixer)
         return signal_chain
@@ -148,8 +147,8 @@ class Synthesizer(threading.Thread):
     def control_change_handler(self, channel: int, cc_number: int, val: int):
         self.log.info(f"Control Change: channel {channel}, number {cc_number}, value {val}")
         if cc_number == Implementation.OSCILLATOR_MIX.value:
-            gain_a_mix_val = self.osc_mix_vals[val]
-            gain_b_mix_val = 1 - gain_a_mix_val
+            gain_b_mix_val = self.osc_mix_vals[val]
+            gain_a_mix_val = 1 - gain_b_mix_val
             self.set_gain_a(gain_a_mix_val)
             self.set_gain_b(gain_b_mix_val)
             self.log.info(f"Gain A: {gain_a_mix_val}")
