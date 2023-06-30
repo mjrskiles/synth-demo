@@ -16,13 +16,14 @@ class Component():
     __deepcopy__
     """
 
-    def __init__(self, sample_rate, frames_per_chunk, subcomponents: List['Component']=[], name="Component"):
+    def __init__(self, sample_rate, frames_per_chunk, subcomponents: List['Component']=[], name="Component", control_tag: str = ""):
         self.log = logging.getLogger(__name__)
         self.sample_rate = sample_rate
         self.frames_per_chunk = frames_per_chunk
         self.subcomponents = subcomponents
         self.active = False
         self.name = name + "#" + str(random.randint(0, 9999))
+        self.control_tag = control_tag
 
     def __iter__(self):
         return self

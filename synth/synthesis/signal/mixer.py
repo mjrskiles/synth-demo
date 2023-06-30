@@ -15,13 +15,8 @@ class Mixer(Component):
 
     def __next__(self):
         input_signals = [next(source_iter) for source_iter in self.source_iters]
-        mixed_signal = np.zeros_like(input_signals[0])
-        
-        for signal in input_signals:
-            mixed_signal += signal
-            
-        np.clip(mixed_signal, -1.0, 1.0)
-
+        mixed_signal = np.mean(input_signals, axis=0)
+        mixed_signal = np.clip(mixed_signal, -1.0, 1.0)
         return mixed_signal.astype(np.float32)
 
     def __deepcopy__(self, memo):

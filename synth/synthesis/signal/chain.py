@@ -48,6 +48,19 @@ class Chain():
         search_subcomponents(self._root_component)
         return components
     
+    def get_components_by_control_tag(self, control_tag):
+        components = []
+
+        def search_subcomponents(component):
+            if hasattr(component, "control_tag") and component.control_tag == control_tag:
+                components.append(component)
+            if hasattr(component, "subcomponents") and len(component.subcomponents) > 0:
+                for subcomponent in component.subcomponents:
+                    search_subcomponents(subcomponent)
+
+        search_subcomponents(self._root_component)
+        return components
+    
     def note_on(self, frequency):
         for osc in self.get_components_by_class(Oscillator):
             osc.frequency = frequency

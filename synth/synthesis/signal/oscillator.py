@@ -12,7 +12,7 @@ class Oscillator(Generator):
         self.log = logging.getLogger(__name__)
         self.frequency = 0.0
         self.phase = 0.0
-        self.amplitude = 1.0
+        self.amplitude = 0.1
 
     @property
     def frequency(self):

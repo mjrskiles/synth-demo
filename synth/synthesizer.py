@@ -6,6 +6,7 @@ from copy import deepcopy
 import numpy as np
 
 from . import midi
+from .midi.implementation import Implementation
 from .synthesis.voice import Voice
 from .synthesis.signal.chain import Chain
 from .synthesis.signal.sine_wave_oscillator import SineWaveOscillator
@@ -30,6 +31,9 @@ class Synthesizer(threading.Thread):
 
         # Set up the stream player
         self.stream_player = StreamPlayer(self.sample_rate, self.frames_per_chunk, self.generator())
+
+        # Set up the lookup values
+        self.osc_mix_vals = np.linspace(0, 1, 128, endpoint=True, dtype=np.float32)
 
     def run(self):
         self.stream_player.play()
@@ -56,6 +60,11 @@ class Synthesizer(threading.Thread):
                         if chan < self.num_voices:
                             self.note_off(int_note, chan)
                             self.log.info(f"Note off {note_name} ({int_note}), chan {chan}")
+                    case ["control_change", "-c", channel, "-n", cc_num, "-v", control_val]:
+                        chan = int(channel)
+                        int_cc_num = int(cc_num)
+                        int_cc_val = int(control_val)
+                        self.control_change_handler(chan, int_cc_num, int_cc_val)
                     case _:
                         self.log.info(f"Matched unknown command: {message}")
         return
@@ -68,8 +77,8 @@ class Synthesizer(threading.Thread):
         square_osc = SquareWaveOscillator(self.sample_rate, self.frames_per_chunk)
         square_osc.frequency = 0.0
 
-        sine_gain = Gain(self.sample_rate, self.frames_per_chunk, [sine_osc])
-        square_gain = Gain(self.sample_rate, self.frames_per_chunk, [square_osc])
+        sine_gain = Gain(self.sample_rate, self.frames_per_chunk, [sine_osc], control_tag="gain_a")
+        square_gain = Gain(self.sample_rate, self.frames_per_chunk, [square_osc], control_tag="gain_b")
 
         mixer = Mixer(self.sample_rate, self.frames_per_chunk, [sine_gain, square_gain])
 
@@ -89,7 +98,7 @@ class Synthesizer(threading.Thread):
                     mix += next(voice.signal_chain)
                     num_active_voices += 1
             
-            np.clip(mix, -1.0, 1.0)
+            mix = np.clip(mix, -1.0, 1.0)
             
             yield mix
             mix = np.zeros(self.frames_per_chunk, np.float32)
@@ -135,3 +144,25 @@ class Synthesizer(threading.Thread):
         """
         note_id = hash(f"{note}{chan}")
         return note_id
+    
+    def control_change_handler(self, channel: int, cc_number: int, val: int):
+        self.log.info(f"Control Change: channel {channel}, number {cc_number}, value {val}")
+        if cc_number == Implementation.OSCILLATOR_MIX.value:
+            gain_a_mix_val = self.osc_mix_vals[val]
+            gain_b_mix_val = 1 - gain_a_mix_val
+            self.set_gain_a(gain_a_mix_val)
+            self.set_gain_b(gain_b_mix_val)
+            self.log.info(f"Gain A: {gain_a_mix_val}")
+            self.log.info(f"Gain B: {gain_b_mix_val}")
+
+    def set_gain_a(self, gain):
+        for voice in self.voices:
+            gain_a_components = voice.signal_chain.get_components_by_control_tag("gain_a")
+            for gain_a in gain_a_components:
+                gain_a.amp = gain
+
+    def set_gain_b(self, gain):
+        for voice in self.voices:
+            gain_b_components = voice.signal_chain.get_components_by_control_tag("gain_b")
+            for gain_b in gain_b_components:
+                gain_b.amp = gain

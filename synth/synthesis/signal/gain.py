@@ -10,10 +10,11 @@ class Gain(Component):
     """
     The gain component multiplies the amplitude of the signal by a constant factor.
     """
-    def __init__(self, sample_rate, frames_per_chunk, subcomponents: List['Component'] = [], name="Gain"):
-        super().__init__(sample_rate, frames_per_chunk, subcomponents, name)
+    def __init__(self, sample_rate, frames_per_chunk, subcomponents: List['Component'] = [], name="Gain", control_tag="gain"):
+        super().__init__(sample_rate, frames_per_chunk, subcomponents, name, control_tag)
         self.log = logging.getLogger(__name__)
-        self.amp = 0.1
+        self.amp = 1.0
+        self.control_tag = control_tag
 
     def __iter__(self):
         self.subcomponent_iter = iter(self.subcomponents[0]) # Gain should only have 1 subcomponent
@@ -24,7 +25,7 @@ class Gain(Component):
         return chunk * self.amp
     
     def __deepcopy__(self, memo):
-        return Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[deepcopy(self.subcomponents[0], memo)], name=self.name)
+        return Gain(self.sample_rate, self.frames_per_chunk, subcomponents=[deepcopy(self.subcomponents[0], memo)], name=self.name, control_tag=self.control_tag)
     
     @property
     def amp(self):

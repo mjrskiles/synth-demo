@@ -34,6 +34,9 @@ class MidiListener(threading.Thread):
                     case "note_off":
                         ctrl_msg = mb.builder().note_off().with_note(msg.note).on_channel(msg.channel).build()
                         self.synth_mailbox.put(ctrl_msg)
+                    case "control_change":
+                        ctrl_msg = mb.builder().control_change().on_channel(msg.channel).with_control_num(msg.control).with_value(msg.value).build()
+                        self.synth_mailbox.put(ctrl_msg)
                     case "stop":
                         self.log.info(f"Received midi STOP message")
                     case _:

@@ -16,7 +16,7 @@ class SquareWaveOscillator(SineWaveOscillator):
         This has the effect of filtering it into a square wave
         """
         sine_wave = super().__next__()
-        square_wave = np.sign(sine_wave)
+        square_wave = self.amplitude * np.sign(sine_wave)
         return square_wave
     
     def __deepcopy__(self, memo):
