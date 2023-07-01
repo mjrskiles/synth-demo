@@ -65,3 +65,16 @@ class Oscillator(Generator):
                 raise ValueError
         except:
             self.log.error(f"unable to set with value {value}")
+
+    @property
+    def active(self):
+        return self._active
+    
+    @active.setter
+    def active(self, value):
+        try:
+            bool_val = bool(value)
+            self._active = bool_val
+            self.frequency = 0.0 if not bool_val else self.frequency
+        except ValueError:
+            self.log.error(f"Unable to set with value {value}")
