@@ -15,6 +15,7 @@ from .synthesis.signal.sawtooth_wave_oscillator import SawtoothWaveOscillator
 from .synthesis.signal.triangle_wave_oscillator import TriangleWaveOscillator
 from .synthesis.signal.gain import Gain
 from .synthesis.signal.mixer import Mixer
+from .synthesis.signal.low_pass_filter import LowPassFilter
 from .playback.stream_player import StreamPlayer
 
 class Synthesizer(threading.Thread):
@@ -25,6 +26,7 @@ class Synthesizer(threading.Thread):
         self.frames_per_chunk = frames_per_chunk
         self.mailbox = mailbox
         self.num_voices = num_voices
+        self.should_run = True
 
         # Set up the voices
         signal_chain_prototype = self.setup_signal_chain()
@@ -36,40 +38,43 @@ class Synthesizer(threading.Thread):
 
         # Set up the lookup values
         self.osc_mix_vals = np.linspace(0, 1, 128, endpoint=True, dtype=np.float32)
+        self.lpf_cutoff_vals = np.logspace(4, 14, 128, endpoint=True, base=2, dtype=np.float32) # 2^14=16384 : that is the highest possible cutoff value
 
     def run(self):
         self.stream_player.play()
-        should_run = True
-        while should_run and self.stream_player.is_active():
+        while self.should_run and self.stream_player.is_active():
             # get() is a blocking call
             if message := self.mailbox.get(): 
-                match message.split():
-                    case ["exit"]:
-                        self.log.info("Got exit command.")
-                        self.stream_player.stop()
-                        should_run = False
-                    case ["note_on", "-n", note, "-c", channel]:
-                        int_note = int(note)
-                        chan = int(channel)
-                        note_name = midi.note_names[int_note]
-                        if chan < self.num_voices:
-                            self.note_on(int_note, chan)
-                            self.log.info(f"Note on {note_name} ({int_note}), chan {chan}")
-                    case ["note_off", "-n", note, "-c", channel]:
-                        int_note = int(note)
-                        chan = int(channel)
-                        note_name = midi.note_names[int_note]
-                        if chan < self.num_voices:
-                            self.note_off(int_note, chan)
-                            self.log.info(f"Note off {note_name} ({int_note}), chan {chan}")
-                    case ["control_change", "-c", channel, "-n", cc_num, "-v", control_val]:
-                        chan = int(channel)
-                        int_cc_num = int(cc_num)
-                        int_cc_val = int(control_val)
-                        self.control_change_handler(chan, int_cc_num, int_cc_val)
-                    case _:
-                        self.log.info(f"Matched unknown command: {message}")
+                self.message_handler(message)
         return
+    
+    def message_handler(self, message: str):
+        match message.split():
+            case ["exit"]:
+                self.log.info("Got exit command.")
+                self.stream_player.stop()
+                self.should_run = False
+            case ["note_on", "-n", note, "-c", channel]:
+                int_note = int(note)
+                chan = int(channel)
+                note_name = midi.note_names[int_note]
+                if chan < self.num_voices:
+                    self.note_on(int_note, chan)
+                    self.log.info(f"Note on {note_name} ({int_note}), chan {chan}")
+            case ["note_off", "-n", note, "-c", channel]:
+                int_note = int(note)
+                chan = int(channel)
+                note_name = midi.note_names[int_note]
+                if chan < self.num_voices:
+                    self.note_off(int_note, chan)
+                    self.log.info(f"Note off {note_name} ({int_note}), chan {chan}")
+            case ["control_change", "-c", channel, "-n", cc_num, "-v", control_val]:
+                chan = int(channel)
+                int_cc_num = int(cc_num)
+                int_cc_val = int(control_val)
+                self.control_change_handler(chan, int_cc_num, int_cc_val)
+            case _:
+                self.log.info(f"Matched unknown command: {message}")
         
 
     def setup_signal_chain(self) -> Chain:
@@ -81,7 +86,9 @@ class Synthesizer(threading.Thread):
 
         mixer = Mixer(self.sample_rate, self.frames_per_chunk, [gain_a, gain_b])
 
-        signal_chain = Chain(mixer)
+        lpf = LowPassFilter(self.sample_rate, self.frames_per_chunk, [mixer], control_tag="lpf")
+
+        signal_chain = Chain(lpf)
         return signal_chain
     
     def generator(self):
@@ -153,6 +160,10 @@ class Synthesizer(threading.Thread):
             self.set_gain_b(gain_b_mix_val)
             self.log.info(f"Gain A: {gain_a_mix_val}")
             self.log.info(f"Gain B: {gain_b_mix_val}")
+        if cc_number == Implementation.LPF_CUTOFF.value:
+            lpf_cutoff = self.lpf_cutoff_vals[val]
+            self.set_lpf_cutoff(lpf_cutoff)
+            self.log.info(f"LPF Cutoff: {lpf_cutoff}")
 
     def set_gain_a(self, gain):
         for voice in self.voices:
@@ -165,3 +176,9 @@ class Synthesizer(threading.Thread):
             gain_b_components = voice.signal_chain.get_components_by_control_tag("gain_b")
             for gain_b in gain_b_components:
                 gain_b.amp = gain
+
+    def set_lpf_cutoff(self, cutoff):
+        for voice in self.voices:
+            lpf_components = voice.signal_chain.get_components_by_control_tag("lpf")
+            for lpf in lpf_components:
+                lpf.cutoff_frequency = cutoff

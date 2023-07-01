@@ -5,7 +5,7 @@ import numpy as np
 from .sine_wave_oscillator import SineWaveOscillator
 
 class SquareWaveOscillator(SineWaveOscillator):
-    def __init__(self, sample_rate, frames_per_chunk, name="SquareWaveOscillator"):
+    def __init__(self, sample_rate: int, frames_per_chunk: int, name: str="SquareWaveOscillator"):
         super().__init__(sample_rate, frames_per_chunk, name=name)
         self.log = logging.getLogger(__name__)
 

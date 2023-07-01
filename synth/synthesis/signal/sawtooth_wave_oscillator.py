@@ -5,7 +5,7 @@ import numpy as np
 from .oscillator import Oscillator
 
 class SawtoothWaveOscillator(Oscillator):
-    def __init__(self, sample_rate, frames_per_chunk, name="SawtoothWaveOscillator"):
+    def __init__(self, sample_rate: int, frames_per_chunk: int, name: str="SawtoothWaveOscillator"):
         super().__init__(sample_rate, frames_per_chunk, name=name)
         self.log = logging.getLogger(__name__)
 

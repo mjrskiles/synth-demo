@@ -5,7 +5,7 @@ import numpy as np
 from .oscillator import Oscillator
 
 class SineWaveOscillator(Oscillator):
-    def __init__(self, sample_rate, frames_per_chunk, name="SineWaveOscillator"):
+    def __init__(self, sample_rate: int, frames_per_chunk: int, name: str="SineWaveOscillator"):
         super().__init__(sample_rate, frames_per_chunk, name=name)
         self.log = logging.getLogger(__name__)
 

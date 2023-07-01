@@ -10,7 +10,7 @@ class Gain(Component):
     """
     The gain component multiplies the amplitude of the signal by a constant factor.
     """
-    def __init__(self, sample_rate, frames_per_chunk, subcomponents: List['Component'] = [], name="Gain", control_tag="gain"):
+    def __init__(self, sample_rate: int, frames_per_chunk: int, subcomponents: List['Component'] = [], name: str="Gain", control_tag: str="gain"):
         super().__init__(sample_rate, frames_per_chunk, subcomponents, name, control_tag)
         self.log = logging.getLogger(__name__)
         self.amp = 1.0

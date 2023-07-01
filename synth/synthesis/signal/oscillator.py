@@ -4,7 +4,7 @@ import numpy as np
 from .generator import Generator
 
 class Oscillator(Generator):
-    def __init__(self, sample_rate, frames_per_chunk, name="Oscillator"):
+    def __init__(self, sample_rate: int, frames_per_chunk: int, name: str="Oscillator"):
         """
         The base class for any component that generates a signal with frequency.
         """

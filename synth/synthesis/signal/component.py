@@ -16,7 +16,7 @@ class Component():
     __deepcopy__
     """
 
-    def __init__(self, sample_rate, frames_per_chunk, subcomponents: List['Component']=[], name="Component", control_tag: str = ""):
+    def __init__(self, sample_rate: int, frames_per_chunk: int, subcomponents: List['Component']=[], name="Component", control_tag: str = ""):
         self.log = logging.getLogger(__name__)
         self.sample_rate = sample_rate
         self.frames_per_chunk = frames_per_chunk

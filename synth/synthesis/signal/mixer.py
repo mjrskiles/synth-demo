@@ -6,7 +6,7 @@ import numpy as np
 from .component import Component
 
 class Mixer(Component):
-    def __init__(self, sample_rate, frames_per_chunk, subcomponents: List[Component] = [], name="Mixer"):
+    def __init__(self, sample_rate: int, frames_per_chunk: int, subcomponents: List[Component] = [], name: str="Mixer"):
         super().__init__(sample_rate, frames_per_chunk, subcomponents, name)
 
     def __iter__(self):
