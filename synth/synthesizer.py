@@ -73,7 +73,7 @@ class Synthesizer(threading.Thread):
         
 
     def setup_signal_chain(self) -> Chain:
-        osc_a = SineWaveOscillator(self.sample_rate, self.frames_per_chunk)
+        osc_a = SawtoothWaveOscillator(self.sample_rate, self.frames_per_chunk)
         osc_b = SquareWaveOscillator(self.sample_rate, self.frames_per_chunk)
 
         gain_a = Gain(self.sample_rate, self.frames_per_chunk, [osc_a], control_tag="gain_a")
