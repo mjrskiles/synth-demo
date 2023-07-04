@@ -35,7 +35,7 @@ Now create a virtual environment:
 
 This should create a folder called venv. Activate the virtual environment:
 
-Windows: ```.\venv\Scripts\activate.exe```
+Windows: ```.\venv\Scripts\activate```
 
 Mac and Linux: ```source ./venv/bin/activate```
 
@@ -56,7 +56,7 @@ Before we launch the synth, let's discover the name of the MIDI controller so we
 
 ```python```
 
-This should open the python REPL. Now 
+This should open the python REPL. Now:
 
 ```
 >>> import synth.midi as midi
@@ -69,9 +69,11 @@ Should return something like
 
 where MPK mini 3 is replaced by the name of your controller. Copy the name of your controller, including the quotes (but not the array brackets).
 
-Now, with the synth-demo project open in a text editor, open synth/settings.py. Replace 'MPK mini 3' with your controller name.
+You can now launch the program with ```python -m synth -p <controller-name>```.
 
-Now we're ready to launch the program!
+If you'd like to set this controller to attach every time without passing a command line argument, you can. With the synth-demo project open in a text editor, open synth/settings.py. On the line with the ```auto_attach``` property, replace 'MPK mini 3' with your controller name.
+
+Now we're ready to launch the program with:
 
 ```python -m synth```
 
