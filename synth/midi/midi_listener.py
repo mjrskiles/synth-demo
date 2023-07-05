@@ -7,6 +7,9 @@ import mido
 from . import message_builder as mb
 
 class MidiListener(threading.Thread):
+    """
+    Listens for MIDI messages on a given port and sends them to the synth mailbox.
+    """
     def __init__(self, thread_mailbox: queue.Queue, synth_mailbox: queue.Queue, port_name: str):
         super().__init__(name=f"{port_name}-listener")
         self.log = logging.getLogger(__name__)
@@ -26,6 +29,7 @@ class MidiListener(threading.Thread):
             should_run = False
 
         while should_run:
+            # Receive MIDI messages from the port and send them to the synth mailbox
             if msg := inport.receive():
                 match msg.type:
                     case "note_on":

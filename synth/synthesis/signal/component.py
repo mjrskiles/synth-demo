@@ -51,7 +51,7 @@ class Component():
 
     @property
     def frames_per_chunk(self):
-        """The number of data frames to generate per call to generate. Essentially the size of the array to generate"""
+        """The number of data frames to generate per call to __next__. Essentially the size of the array to generate"""
         return self._frames_per_chunk
     
     @frames_per_chunk.setter

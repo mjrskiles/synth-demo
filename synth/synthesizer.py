@@ -40,7 +40,7 @@ class Synthesizer(threading.Thread):
         # Set up the lookup values
         self.osc_mix_vals = np.linspace(0, 1, 128, endpoint=True, dtype=np.float32)
         self.lpf_cutoff_vals = np.logspace(4, 14, 128, endpoint=True, base=2, dtype=np.float32) # 2^14=16384 : that is the highest possible cutoff value
-        self.delay_times = 0.5 * np.logspace(0, 2, 128, endpoint=True, base=2, dtype=np.float32) - 0.5 # range is from 0 - 6s
+        self.delay_times = 0.5 * np.logspace(0, 2, 128, endpoint=True, base=2, dtype=np.float32) - 0.5 # range is from 0 - 1.5s
         logspaced = np.logspace(0, 1, 128, endpoint=True, dtype=np.float32) # range is from 1-10
         self.delay_wet_gain_vals = (logspaced - 1) / (10 - 1) # range is from 0-1
 
@@ -53,6 +53,7 @@ class Synthesizer(threading.Thread):
         return
     
     def message_handler(self, message: str):
+        """Handles messages from the mailbox."""
         match message.split():
             case ["exit"]:
                 self.log.info("Got exit command.")
@@ -62,16 +63,14 @@ class Synthesizer(threading.Thread):
                 int_note = int(note)
                 chan = int(channel)
                 note_name = midi.note_names[int_note]
-                if chan < self.num_voices:
-                    self.note_on(int_note, chan)
-                    self.log.info(f"Note on {note_name} ({int_note}), chan {chan}")
+                self.note_on(int_note, chan)
+                self.log.info(f"Note on {note_name} ({int_note}), chan {chan}")
             case ["note_off", "-n", note, "-c", channel]:
                 int_note = int(note)
                 chan = int(channel)
                 note_name = midi.note_names[int_note]
-                if chan < self.num_voices:
-                    self.note_off(int_note, chan)
-                    self.log.info(f"Note off {note_name} ({int_note}), chan {chan}")
+                self.note_off(int_note, chan)
+                self.log.info(f"Note off {note_name} ({int_note}), chan {chan}")
             case ["control_change", "-c", channel, "-n", cc_num, "-v", control_val]:
                 chan = int(channel)
                 int_cc_num = int(cc_num)
@@ -79,9 +78,32 @@ class Synthesizer(threading.Thread):
                 self.control_change_handler(chan, int_cc_num, int_cc_val)
             case _:
                 self.log.info(f"Matched unknown command: {message}")
+
+    def control_change_handler(self, channel: int, cc_number: int, val: int):
+        self.log.info(f"Control Change: channel {channel}, number {cc_number}, value {val}")
+        if cc_number == Implementation.OSCILLATOR_MIX.value:
+            gain_b_mix_val = self.osc_mix_vals[val]
+            gain_a_mix_val = 1 - gain_b_mix_val
+            self.set_gain_a(gain_a_mix_val)
+            self.set_gain_b(gain_b_mix_val)
+            self.log.info(f"Gain A: {gain_a_mix_val}")
+            self.log.info(f"Gain B: {gain_b_mix_val}")
+        elif cc_number == Implementation.LPF_CUTOFF.value:
+            lpf_cutoff = self.lpf_cutoff_vals[val]
+            self.set_lpf_cutoff(lpf_cutoff)
+            self.log.info(f"LPF Cutoff: {lpf_cutoff}")
+        elif cc_number == Implementation.DELAY_TIME.value:
+            delay_time = self.delay_times[val]
+            self.set_delay_time(delay_time)
+            self.log.info(f"Delay Time: {delay_time}s")
+        elif cc_number == Implementation.DELAY_WET_GAIN.value:
+            delay_wet_gain = self.delay_wet_gain_vals[val]
+            self.set_delay_wet_gain(delay_wet_gain)
+            self.log.info(f"Delay Wet Gain: {delay_wet_gain}")
         
 
     def setup_signal_chain(self) -> Chain:
+        """Build the signal chain prototype."""
         osc_a = SawtoothWaveOscillator(self.sample_rate, self.frames_per_chunk)
         osc_b = SquareWaveOscillator(self.sample_rate, self.frames_per_chunk)
 
@@ -110,6 +132,7 @@ class Synthesizer(threading.Thread):
                 if voice.active:
                     num_active_voices += 1
             
+            # Prevent the mix from going outside the range (-1, 1)
             mix = np.clip(mix, -1.0, 1.0)
             
             yield mix
@@ -155,28 +178,6 @@ class Synthesizer(threading.Thread):
         """
         note_id = hash(f"{note}{chan}")
         return note_id
-    
-    def control_change_handler(self, channel: int, cc_number: int, val: int):
-        self.log.info(f"Control Change: channel {channel}, number {cc_number}, value {val}")
-        if cc_number == Implementation.OSCILLATOR_MIX.value:
-            gain_b_mix_val = self.osc_mix_vals[val]
-            gain_a_mix_val = 1 - gain_b_mix_val
-            self.set_gain_a(gain_a_mix_val)
-            self.set_gain_b(gain_b_mix_val)
-            self.log.info(f"Gain A: {gain_a_mix_val}")
-            self.log.info(f"Gain B: {gain_b_mix_val}")
-        if cc_number == Implementation.LPF_CUTOFF.value:
-            lpf_cutoff = self.lpf_cutoff_vals[val]
-            self.set_lpf_cutoff(lpf_cutoff)
-            self.log.info(f"LPF Cutoff: {lpf_cutoff}")
-        if cc_number == Implementation.DELAY_TIME.value:
-            delay_time = self.delay_times[val]
-            self.set_delay_time(delay_time)
-            self.log.info(f"Delay Time: {delay_time}s")
-        if cc_number == Implementation.DELAY_WET_GAIN.value:
-            delay_wet_gain = self.delay_wet_gain_vals[val]
-            self.set_delay_wet_gain(delay_wet_gain)
-            self.log.info(f"Delay Wet Gain: {delay_wet_gain}")
         
 
     def set_gain_a(self, gain):

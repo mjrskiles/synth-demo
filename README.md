@@ -80,7 +80,7 @@ Now we're ready to launch the program with:
 Should launch the synth and give an output like:
 
 ```
-2023-07-01 09:53:30 [INFO] __main__ [<module>]:
+2023-07-04 19:11:40 [INFO] __main__ [<module>]:
     __
    |  |
  __|  |___             ______         __        __
@@ -99,17 +99,19 @@ Should launch the synth and give an output like:
  __________|__|        ______|__|   |  |       |  |       |__|____|__|    |  |       |  |
 |__________|          |______|      |__|       |__|          |____|       |__|       |__|
 
-2023-07-01 09:53:30 [INFO] synthesizer [__init__]: Signal Chain Prototype:
+2023-07-04 19:11:40 [INFO] __main__ [<module>]: Available MIDI ports: ['3- Focusrite USB MIDI 0', 'MPK mini 3 1']
+2023-07-04 19:11:40 [INFO] __main__ [<module>]: Using MIDI port MPK mini 3 1
+2023-07-04 19:11:40 [INFO] synthesizer [__init__]: Signal Chain Prototype:
 --- Signal Chain ---
-Delay#27
-  LowPassFilter#4272
-    Mixer#9772
-      Gain#8978
-        SawtoothWaveOscillator#9988
-      Gain#8795
-        SquareWaveOscillator#3363
+Delay#6468
+  LowPassFilter#2980
+    Mixer#5522
+      Gain#4630
+        SawtoothWaveOscillator#1995
+      Gain#3090
+        SquareWaveOscillator#9454
 
-2023-07-01 09:53:30 [INFO] midi_listener [run]: Opened port MPK mini 3
+2023-07-04 19:11:40 [INFO] midi_listener [run]: Opened port MPK mini 3 1
 ```
 
 At this point the synth is running and ready to make sound! Before you play, I'd highly recommend starting with the volume turned all the way down and adjusting it up slowly while playing a note.

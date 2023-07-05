@@ -4,10 +4,10 @@ import numpy as np
 from .generator import Generator
 
 class Oscillator(Generator):
+    """
+    The base class for any component that generates a signal with frequency.
+    """
     def __init__(self, sample_rate: int, frames_per_chunk: int, name: str="Oscillator"):
-        """
-        The base class for any component that generates a signal with frequency.
-        """
         super().__init__(sample_rate, frames_per_chunk, name=name)
         self.log = logging.getLogger(__name__)
         self.frequency = 0.0
@@ -68,6 +68,10 @@ class Oscillator(Generator):
 
     @property
     def active(self):
+        """
+        Whether or not the oscillator is active
+        Overrides the active property of the Component class
+        """
         return self._active
     
     @active.setter

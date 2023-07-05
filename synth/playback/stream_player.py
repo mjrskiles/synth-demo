@@ -68,11 +68,11 @@ class StreamPlayer:
         """
         if self._output_stream is None:
             self._output_stream = self.pyaudio_interface.open(format = pyaudio.paFloat32,
-                                                        channels = 1,
-                                                        rate = self.sample_rate,
-                                                        output = True,
-                                                        stream_callback=self.audio_callback,
-                                                        frames_per_buffer=self.frames_per_chunk)
+                                                              channels = 1,
+                                                              rate = self.sample_rate,
+                                                              output = True,
+                                                              stream_callback=self.audio_callback,
+                                                              frames_per_buffer=self.frames_per_chunk)
 
         self._output_stream.start_stream()
     

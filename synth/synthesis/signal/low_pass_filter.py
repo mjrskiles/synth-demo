@@ -16,6 +16,18 @@ class LowPassFilter(Component):
         self.b, self.a = self.compute_coefficients()
         self.zi = self.compute_initial_conditions()
 
+    def __iter__(self):
+        self.source_iter = iter(self.subcomponents[0])
+        return self
+
+    def __next__(self):
+        input_signal = next(self.source_iter)
+        output_signal, self.zi = lfilter(self.b, self.a, input_signal, zi=self.zi)
+        return output_signal.astype(np.float32)
+
+    def __deepcopy__(self, memo):
+        return LowPassFilter(self.sample_rate, self.frames_per_chunk, [deepcopy(self.subcomponents[0], memo)], name=self.name, control_tag=self.control_tag)
+
     @property
     def cutoff_frequency(self):
         return self._cutoff_frequency
@@ -40,15 +52,3 @@ class LowPassFilter(Component):
     def compute_initial_conditions(self):
         zi = lfilter_zi(self.b, self.a)
         return zi
-
-    def __iter__(self):
-        self.source_iter = iter(self.subcomponents[0])
-        return self
-
-    def __next__(self):
-        input_signal = next(self.source_iter)
-        output_signal, self.zi = lfilter(self.b, self.a, input_signal, zi=self.zi)
-        return output_signal.astype(np.float32)
-
-    def __deepcopy__(self, memo):
-        return LowPassFilter(self.sample_rate, self.frames_per_chunk, [deepcopy(self.subcomponents[0], memo)], name=self.name, control_tag=self.control_tag)
