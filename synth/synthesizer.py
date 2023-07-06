@@ -13,6 +13,7 @@ from .synthesis.signal.sine_wave_oscillator import SineWaveOscillator
 from .synthesis.signal.square_wave_oscillator import SquareWaveOscillator
 from .synthesis.signal.sawtooth_wave_oscillator import SawtoothWaveOscillator
 from .synthesis.signal.triangle_wave_oscillator import TriangleWaveOscillator
+from .synthesis.signal.noise_generator import NoiseGenerator
 from .synthesis.signal.gain import Gain
 from .synthesis.signal.mixer import Mixer
 from .synthesis.signal.low_pass_filter import LowPassFilter
